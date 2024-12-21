@@ -196,10 +196,17 @@ int main(int argc, char **argv)
 		.frequency = 587,
 		.isActive = false
 	};
+	struct Button Ds5 = {
+		.x = 275, .y = 60,
+		.w = 30, .h = 60, .z = 0,
+		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
+		.frequency = 622,
+		.isActive = false
+	};
 
 	//create an array, and add the buttons into it
 	//black keys go in first (so they'll end up on top)
-	struct Button keyboard[15];
+	struct Button keyboard[16];
 	
 	keyboard[0] = Cs4;
 	keyboard[1] = Ds4;
@@ -207,16 +214,17 @@ int main(int argc, char **argv)
 	keyboard[3] = Gs4;
 	keyboard[4] = As4;
 	keyboard[5] = Cs5;
+	keyboard[6] = Ds5;
 
-	keyboard[6] = C4;
-	keyboard[7] = D4;
-	keyboard[8] = E4;
-	keyboard[9] = F4;
-	keyboard[10] = G4;
-	keyboard[11] = A4;
-	keyboard[12] = B4;
-	keyboard[13] = C5;
-	keyboard[14] = D5;
+	keyboard[7] = C4;
+	keyboard[8] = D4;
+	keyboard[9] = E4;
+	keyboard[10] = F4;
+	keyboard[11] = G4;
+	keyboard[12] = A4;
+	keyboard[13] = B4;
+	keyboard[14] = C5;
+	keyboard[15] = D5;
 	
 
 	//----- ----- AUDIO SETUP ----- -----
