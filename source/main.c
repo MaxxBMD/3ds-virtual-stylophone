@@ -15,6 +15,17 @@
 #define SAMPLESPERBUF (SAMPLERATE/30)
 #define BYTESPERSAMPLE 4
 
+#define clrOffWhite		C2D_Color32(0xFA, 0xFA, 0xFA, 0xFF)
+#define clrOffWhite2	C2D_Color32(0xD0, 0xD0, 0xD0, 0xFF)
+#define clrOffBlack		C2D_Color32(0x30, 0x30, 0x30, 0xFF)
+#define clrOffBlack2	C2D_Color32(0x11, 0x25, 0x25, 0xFF)
+#define clrClear		C2D_Color32(0xFF, 0xD8, 0xB0, 0x68)
+#define clrMangoTango	C2D_Color32(0xff, 0x82, 0x43, 0xff)
+#define clrDimGray		C2D_Color32(0x69, 0x69, 0x69, 0xff)
+
+#define clrOnWhite clrMangoTango
+#define clrOnBlack clrMangoTango
+
 struct Button {
 	int x, y;	//top left corner (px)
 	int z;		//depth
@@ -52,44 +63,13 @@ void fill_buffer(void* audioBuffer, size_t offset, size_t size, int frequency) {
 	DSP_FlushDataCache(audioBuffer, size);
 }
 
-int main(int argc, char **argv)
-{
-	//----- ----- GRAPHICS SETUP ----- -----
+void fill_buttonArr(struct Button* keyboard) {
 
-	//Initialize citro libraries/screens
-	gfxInitDefault();
-	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
-	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
-	C2D_Prepare();
-	C3D_RenderTarget* bot = C2D_CreateScreenTarget (GFX_BOTTOM, GFX_LEFT);
-	
-	//Initialize console printing
-	//top screen has 30 rows and 50 columns for text
-	//bottom screen has 30 rows and 40 columns for text
-	PrintConsole topScreen;
-	consoleInit(GFX_TOP, &topScreen);
-	
-	//print some text (it will remain constant)
-	consoleSelect(&topScreen);
-	printf("\x1b[3;17HVirtual Stylophone");
-	printf("\x1b[4;16HPress Start to exit.");
-	printf("\x1b[29;0HCurrent frequency (Hz):");
-	printf("\x1b[30;0HTouch Screen position (px):");
-
-	//set up colors ("clr" <-> "color")
-	u32 clrOffWhite		= C2D_Color32(0xFA, 0xFA, 0xFA, 0xFF);
-	u32 clrOffWhite2	= C2D_Color32(0xD0, 0xD0, 0xD0, 0xFF);
-	u32 clrOffBlack		= C2D_Color32(0x30, 0x30, 0x30, 0xFF);
-	u32 clrOffBlack2	= C2D_Color32(0x11, 0x25, 0x25, 0xFF);
-	u32 clrClear		= C2D_Color32(0xFF, 0xD8, 0xB0, 0x68);
-	u32 clrMangoTango	= C2D_Color32(0xff, 0x82, 0x43, 0xff);
-	u32 clrDimGray		= C2D_Color32(0x69, 0x69, 0x69, 0xff);
-
-	#define clrOnWhite clrMangoTango
-	#define clrOnBlack clrMangoTango
+	//we will write to the first 16 slots of this array
+	//we aren't currently checking if there is room to fit.
+	//make sure there is room or we will clobber other data!!!
 
 	//initialize buttons
-	//I'd do this in a void function, but I'd need to pass C2D stuff (i dont want to). -Maxx
 	struct Button C4 = {
 		//middle C
 		.x = 20, .y = 90,
@@ -204,10 +184,7 @@ int main(int argc, char **argv)
 		.isActive = false
 	};
 
-	//create an array, and add the buttons into it
 	//black keys go in first (so they'll end up on top)
-	struct Button keyboard[16];
-	
 	keyboard[0] = Cs4;
 	keyboard[1] = Ds4;
 	keyboard[2] = Fs4;
@@ -226,6 +203,39 @@ int main(int argc, char **argv)
 	keyboard[14] = C5;
 	keyboard[15] = D5;
 	
+}
+
+int main(int argc, char **argv)
+{
+	//----- ----- GRAPHICS SETUP ----- -----
+
+	//Initialize citro libraries/screens
+	gfxInitDefault();
+	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
+	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
+	C2D_Prepare();
+	C3D_RenderTarget* bot = C2D_CreateScreenTarget (GFX_BOTTOM, GFX_LEFT);
+	
+	//Initialize console printing
+	//top screen has 30 rows and 50 columns for text
+	//bottom screen has 30 rows and 40 columns for text
+	PrintConsole topScreen;
+	consoleInit(GFX_TOP, &topScreen);
+	
+	//print some text (it will remain constant)
+	consoleSelect(&topScreen);
+	printf("\x1b[3;17HVirtual Stylophone");
+	printf("\x1b[4;16HPress Start to exit.");
+	printf("\x1b[29;0HCurrent frequency (Hz):");
+	printf("\x1b[30;0HTouch Screen position (px):");
+
+	//the colors are now defined at the top of the page as a bunch of #define statements. -Maxx
+
+	//----- ----- DATA STRUCTURE(s) SETUP ----- -----
+
+	struct Button keyboard[16];
+	//careful! this function assumes keyboard has 16+ open spaces!
+	fill_buttonArr(keyboard);
 
 	//----- ----- AUDIO SETUP ----- -----
 
