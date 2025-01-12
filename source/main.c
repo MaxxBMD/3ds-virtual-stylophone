@@ -32,7 +32,7 @@ struct Button {
 	int w, h; 	//scale (px)(extending to bottom right)
 	u32 clrOff;
 	u32 clrOn;
-	int frequency;	//Hz of sound it makes
+	float frequency;	//Hz of sound it makes
 	bool isActive;
 };
 
@@ -49,7 +49,7 @@ bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 }
 
 // audioBuffer is stereo PCM16
-void fill_buffer(void* audioBuffer, size_t offset, size_t size, int frequency) {
+void fill_buffer(void* audioBuffer, size_t offset, size_t size, float frequency) {
 	u32* dest = (u32*) audioBuffer;
 
 	for (int i = 0; i < size; i++) {
@@ -75,112 +75,112 @@ void fill_buttonArr(struct Button* keyboard) {
 		.x = 20, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
-		.frequency = 262,
+		.frequency = 261.6256,
 		.isActive = false
 	};
 	struct Button Cs4 = {
 		.x = 35, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
-		.frequency = 277,
+		.frequency = 277.1826,
 		.isActive = false
 	};
 	struct Button D4 = {
 		.x = 50, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
-		.frequency = 294,
+		.frequency = 293.6648,
 		.isActive = false
 	};
 	struct Button Ds4 = {
 		.x = 65, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
-		.frequency = 311,
+		.frequency = 311.1270,
 		.isActive = false
 	};
 	struct Button E4 = {
 		.x = 80, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
-		.frequency = 330,
+		.frequency = 329.6276,
 		.isActive = false
 	};
 	struct Button F4 = {
 		.x = 110, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
-		.frequency = 349,
+		.frequency = 349.2282,
 		.isActive = false
 	};
 	struct Button Fs4 = {
 		.x = 125, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
-		.frequency = 370,
+		.frequency = 369.9944,
 		.isActive = false
 	};
 	struct Button G4 = {
 		.x = 140, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
-		.frequency = 392,
+		.frequency = 391.9954,
 		.isActive = false
 	};
 	struct Button Gs4 = {
 		.x = 155, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
-		.frequency = 415,
+		.frequency = 415.3047,
 		.isActive = false
 	};
 	struct Button A4 = {
 		.x = 170, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
-		.frequency = 440,
+		.frequency = 440.0000,
 		.isActive = false
 	};
 	struct Button As4 = {
 		.x = 185, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
-		.frequency = 466,
+		.frequency = 466.1638,
 		.isActive = false
 	};
 	struct Button B4 = {
 		.x = 200, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
-		.frequency = 494,
+		.frequency = 493.8833,
 		.isActive = false
 	};
 	struct Button C5 = {
 		.x = 230, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
-		.frequency = 523,
+		.frequency = 523.2511,
 		.isActive = false
 	};
 	struct Button Cs5 = {
 		.x = 245, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
-		.frequency = 554,
+		.frequency = 554.3653,
 		.isActive = false
 	};
 	struct Button D5 = {
 		.x = 260, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
-		.frequency = 587,
+		.frequency = 587.3295,
 		.isActive = false
 	};
 	struct Button Ds5 = {
 		.x = 275, .y = 60,
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
-		.frequency = 622,
+		.frequency = 622.2540,
 		.isActive = false
 	};
 
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
 			Also, keep track of the activated key's pitch.
 		*/
 		bool isTargetLocated = false;
-		int selectedFreq = -1;
+		float selectedFreq = -1;
 		for (int i = 0; i < sizeof(keyboard)/sizeof(keyboard[0]); i++) {
 			#define crBtn keyboard[i]
 
@@ -314,9 +314,9 @@ int main(int argc, char **argv)
 
 		//Print frequency and touch coords to top screen
 		if (selectedFreq != -1) {
-			printf("\x1b[29;25H%04d", selectedFreq);
+			printf("\x1b[29;25H%.4f", selectedFreq);
 		} else {
-			printf("\x1b[29;25H    ");
+			printf("\x1b[29;25H        ");
 		}
 		printf("\x1b[30;28H%03d; %03d", touch.px, touch.py);
 
