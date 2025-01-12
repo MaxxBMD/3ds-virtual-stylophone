@@ -3,7 +3,7 @@
     https://github.com/devkitPro/3ds-examples
 
 	Other parts of the code written by:
-	- MaxxBMD (Dec.04 2024)
+	- MaxxBMD (Jan.12 2025)
 */
 
 #include <3ds.h>
@@ -52,10 +52,21 @@ bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 void fill_buffer(void* audioBuffer, size_t offset, size_t size, float frequency) {
 	u32* dest = (u32*) audioBuffer;
 
-	for (int i = 0; i < size; i++) {
-		// This is a simple sine wave, with a frequency of `frequency` Hz, and an amplitude 30% of maximum.
-		s16 sample = 0.3 * 0x7FFF * sin(frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+	/*
+		TODO: add an "attack" parameter to the sound.
+		Treat the amplitude as a velocity that constantly decelerates to 0%.
+		If the note is being played, the amplitude accelerates.
+		Should we make a separate sound struct to hold this data?
+	*/
 
+	const float AMPLITUDE_MAX = 0.3;
+	float sound_velocity = 0;
+	sound_velocity = 1;
+	
+	for (int i = 0; i < size; i++) {
+		// This is a simple sine wave, with a frequency of `frequency` Hz.
+		s16 sample = APLITUDE_MAX * sound_velocity * 0x7FFF * sin(frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		
 		// Stereo samples are interleaved: left and right channels.
 		dest[i] = (sample << 16) | (sample & 0xffff);
 	}
