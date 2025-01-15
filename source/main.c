@@ -50,23 +50,20 @@ bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 }
 
 // audioBuffer is stereo PCM16
-void fill_buffer(void* audioBuffer, size_t offset, size_t size, float frequency) {
+void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* btnToPlay) {
 	u32* dest = (u32*) audioBuffer;
 
-	/*	TODO:
-		The velocity of the sound is stored in the Button struct.
-		We need a better way of passing in that data.
-		Maybe instead of keeping track of the frequency float,
-		we keep track of a pointer to the button in question?
-	*/
+	if (!btnToPlay) {return;}
 
+	//const float TARGET_VELOCITY = 1.0;
 	const float AMPLITUDE_MAX = 0.3;
-	float sound_velocity = 0;
-	sound_velocity = 1.01; //if i put it as 1, the compiler warns me of an unused variable.
+		
+	//TODO figure out exactly when to tick up/down the velocity of the sound.
+	//This could be a full-fledged ASDR thing.
 	
 	for (int i = 0; i < size; i++) {
 		// This is a simple sine wave, with a frequency of `frequency` Hz.
-		s16 sample = AMPLITUDE_MAX * sound_velocity * 0x7FFF * sin(frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		s16 sample = AMPLITUDE_MAX * 0x7FFF * sin(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		
 		// Stereo samples are interleaved: left and right channels.
 		dest[i] = (sample << 16) | (sample & 0xffff);
@@ -315,7 +312,8 @@ int main(int argc, char **argv)
 			Also, keep track of the activated key's pitch.
 		*/
 		bool isTargetLocated = false;
-		float selectedFreq = -1;
+		struct Button *selectedBtn = NULL;
+
 		for (int i = 0; i < sizeof(keyboard)/sizeof(keyboard[0]); i++) {
 			#define crBtn keyboard[i]
 
@@ -331,8 +329,8 @@ int main(int argc, char **argv)
 			);
 			if (isCurrBtnTouched) {
 				isTargetLocated = true;
+				selectedBtn = &crBtn;
 				crBtn.isActive = true;
-				selectedFreq = crBtn.frequency;
 			}		
 		}
 		
@@ -343,9 +341,9 @@ int main(int argc, char **argv)
 		C2D_TargetClear(bot, clrDimGray);
 		C2D_SceneBegin(bot);
 
-		//Print frequency and touch coords to top screen
-		if (selectedFreq != -1) {
-			printf("\x1b[29;25H%.4f", selectedFreq);
+		//Print frequency and touch coords to top screen (if pointer is real)
+		if (selectedBtn) {
+			printf("\x1b[29;25H%.4f", selectedBtn->frequency);
 		} else {
 			printf("\x1b[29;25H        ");
 		}
@@ -367,7 +365,10 @@ int main(int argc, char **argv)
 
 		//play the audio
 		bool doPlayAudio = false;
-		doPlayAudio = (selectedFreq > 0);
+
+		//safety - make sure selectedBtn is real and has a valid frequency.
+		if (selectedBtn) {doPlayAudio = (selectedBtn->frequency > 0);}
+
 		if (waveBuf[fillBlock].status == NDSP_WBUF_DONE && doPlayAudio) {
 
 			fill_buffer
@@ -375,7 +376,7 @@ int main(int argc, char **argv)
 				waveBuf[fillBlock].data_pcm16, 
 				stream_offset, 
 				waveBuf[fillBlock].nsamples, 
-				selectedFreq
+				selectedBtn
 			);
 			ndspChnWaveBufAdd(0, &waveBuf[fillBlock]);
 			stream_offset += waveBuf[fillBlock].nsamples;
