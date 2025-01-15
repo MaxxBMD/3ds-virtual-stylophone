@@ -33,6 +33,7 @@ struct Button {
 	u32 clrOff;
 	u32 clrOn;
 	float frequency;	//Hz of sound it makes
+	float volVelocity;	//the "velocity" of the sound's volume
 	bool isActive;
 };
 
@@ -52,20 +53,20 @@ bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 void fill_buffer(void* audioBuffer, size_t offset, size_t size, float frequency) {
 	u32* dest = (u32*) audioBuffer;
 
-	/*
-		TODO: add an "attack" parameter to the sound.
-		Treat the amplitude as a velocity that constantly decelerates to 0%.
-		If the note is being played, the amplitude accelerates.
-		Should we make a separate sound struct to hold this data?
+	/*	TODO:
+		The velocity of the sound is stored in the Button struct.
+		We need a better way of passing in that data.
+		Maybe instead of keeping track of the frequency float,
+		we keep track of a pointer to the button in question?
 	*/
 
 	const float AMPLITUDE_MAX = 0.3;
 	float sound_velocity = 0;
-	sound_velocity = 1;
+	sound_velocity = 1.01; //if i put it as 1, the compiler warns me of an unused variable.
 	
 	for (int i = 0; i < size; i++) {
 		// This is a simple sine wave, with a frequency of `frequency` Hz.
-		s16 sample = APLITUDE_MAX * sound_velocity * 0x7FFF * sin(frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		s16 sample = AMPLITUDE_MAX * sound_velocity * 0x7FFF * sin(frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		
 		// Stereo samples are interleaved: left and right channels.
 		dest[i] = (sample << 16) | (sample & 0xffff);
@@ -81,12 +82,16 @@ void fill_buttonArr(struct Button* keyboard) {
 	//make sure there is room or we will clobber other data!!!
 
 	//initialize buttons
+	//.z should init to 0, but that should be fine.
+	//.volvelocity should init to 0.
+	//.isActive should init to false.
 	struct Button C4 = {
 		//middle C
 		.x = 20, .y = 90,
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
 		.frequency = 261.6256,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button Cs4 = {
@@ -94,6 +99,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
 		.frequency = 277.1826,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button D4 = {
@@ -101,6 +107,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
 		.frequency = 293.6648,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button Ds4 = {
@@ -108,6 +115,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
 		.frequency = 311.1270,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button E4 = {
@@ -115,6 +123,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
 		.frequency = 329.6276,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button F4 = {
@@ -122,6 +131,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
 		.frequency = 349.2282,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button Fs4 = {
@@ -129,6 +139,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
 		.frequency = 369.9944,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button G4 = {
@@ -136,6 +147,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
 		.frequency = 391.9954,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button Gs4 = {
@@ -143,6 +155,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
 		.frequency = 415.3047,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button A4 = {
@@ -150,6 +163,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
 		.frequency = 440.0000,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button As4 = {
@@ -157,6 +171,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
 		.frequency = 466.1638,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button B4 = {
@@ -164,6 +179,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
 		.frequency = 493.8833,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button C5 = {
@@ -171,6 +187,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite2, .clrOn = clrOnWhite,
 		.frequency = 523.2511,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button Cs5 = {
@@ -178,6 +195,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack, .clrOn = clrOnBlack,
 		.frequency = 554.3653,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button D5 = {
@@ -185,6 +203,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 120, .z = 0,
 		.clrOff = clrOffWhite, .clrOn = clrOnWhite,
 		.frequency = 587.3295,
+		.volVelocity = 0,
 		.isActive = false
 	};
 	struct Button Ds5 = {
@@ -192,6 +211,7 @@ void fill_buttonArr(struct Button* keyboard) {
 		.w = 30, .h = 60, .z = 0,
 		.clrOff = clrOffBlack2, .clrOn = clrOnBlack,
 		.frequency = 622.2540,
+		.volVelocity = 0,
 		.isActive = false
 	};
 
