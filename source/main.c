@@ -36,7 +36,7 @@ struct Button {
 	float volVelocity;	//the "velocity" of the sound's volume
 	bool isActive;
 };
-enum waveShape {sine, square, triangle, sawtooth};
+enum waveShape {sine = 0, square = 1, triangle = 2, sawtooth = 3};
 
 bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 	//(0,0) = screen's top left corner
@@ -50,13 +50,13 @@ bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 	);
 }
 
-//TODO make sure these things work
 float xToSquare(float x) {
 	//like a sine wave, but for a square wave
-	if (sin(x)) {return 1.0;}
-	return -1.0;
+	if (sin(x) > 0) {return 1.0;}
+	else {return -1.0;}
 }
-/* TODO: change these so they're float-friendly
+
+/* FIXME: either make tri/saw float friendly or use ints.
 float xToSaw (float x) {
 	//like a sine wave, but for a sawtooth wave
 	if (x < 0) {x *= -1;}
@@ -99,7 +99,7 @@ void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* b
 		if (soundShape == square) {
 			sample *= xToSquare(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		}
-		/*	TODO: fix the xToSaw and xToTriangle functions before re-enabling these
+		/*	TODO: fix xToSaw() and xToTriangle() before re-enabling these
 		else if (soundShape == sawtooth) {
 			sample *= xoToSaw(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		}
@@ -108,7 +108,7 @@ void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* b
 		}
 		*/
 		else {
-			//sine, or if soundShape is unspecified
+			//sine, or if soundShape is incompatable
 			sample *= sin(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		}
 
@@ -301,6 +301,8 @@ int main(int argc, char **argv)
 	consoleSelect(&topScreen);
 	printf("\x1b[3;17HVirtual Stylophone");
 	printf("\x1b[4;16HPress Start to exit.");
+
+	printf("\x1b[27;0HWave shape (dpad up/down):");
 	printf("\x1b[29;0HCurrent frequency (Hz):");
 	printf("\x1b[30;0HTouch Screen position (px):");
 
@@ -311,6 +313,8 @@ int main(int argc, char **argv)
 	struct Button keyboard[16];
 	//careful! this function assumes keyboard has 16+ open spaces!
 	fill_buttonArr(keyboard);
+
+	enum waveShape currentShape = sine;
 
 	//----- ----- AUDIO SETUP ----- -----
 
@@ -345,6 +349,20 @@ int main(int argc, char **argv)
 		hidScanInput();
 		u32 kDown = hidKeysDown();
 		if (kDown & KEY_START) break; // break in order to return to hbmenu
+		//all key names can be found at examples/input/read-controls/source/main.c lines 22-31.
+
+		//cycle currentShape through all possible* values.
+			// *(all values currently supported)
+		//using d-pad AND button pad so that left and right handed users are both comfortable.
+		//currentShape_int exists because doing this directly to an enum makes my compiler scared. -Maxx
+		//TODO: once we have all 4 wave shapes, change %2 to %4.
+		int currentShape_int = currentShape;
+		if (kDown & KEY_DUP || kDown & KEY_X) {
+			currentShape_int = (++currentShape) % 2;
+		} else if (kDown & KEY_DDOWN || kDown & KEY_B) {
+			currentShape_int = (--currentShape) % 2;
+		}
+		currentShape = currentShape_int;		
 
 		touchPosition touch;
 		hidTouchRead(&touch);
@@ -388,13 +406,20 @@ int main(int argc, char **argv)
 		C2D_TargetClear(bot, clrDimGray);
 		C2D_SceneBegin(bot);
 
-		//Print frequency and touch coords to top screen (if pointer is real)
+		//Print data that may vary frame-to-frame. Labels can be found during the "GRAPHICS SETUP" phase.
+		//wave shape
+		if (currentShape == sine)			{printf("\x1b[27;28Hsine    ");}
+		else if (currentShape == square)	{printf("\x1b[27;28Hsquare  ");}
+		else if (currentShape == triangle)	{printf("\x1b[27;28Htriangle");}
+		else if (currentShape == sawtooth)	{printf("\x1b[27;28Hsawtooth");}
+		//frequency
 		if (selectedBtn) {
 			printf("\x1b[29;25H%.4f", selectedBtn->frequency);
 		} else {
 			printf("\x1b[29;25H        ");
 		}
-		printf("\x1b[30;28H%03d; %03d", touch.px, touch.py);
+		//touch position
+		printf("\x1b[30;29H%03d;%03d", touch.px, touch.py);
 
 		//draw each button in reverse order (so the first items appear on top)
 		for (int i = sizeof(keyboard)/sizeof(keyboard[0]) - 1; i >= 0; i--) {
@@ -424,7 +449,7 @@ int main(int argc, char **argv)
 				stream_offset, 
 				waveBuf[fillBlock].nsamples, 
 				selectedBtn,
-				sine
+				currentShape
 			);
 			ndspChnWaveBufAdd(0, &waveBuf[fillBlock]);
 			stream_offset += waveBuf[fillBlock].nsamples;
