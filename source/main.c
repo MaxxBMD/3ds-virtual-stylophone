@@ -3,7 +3,7 @@
     https://github.com/devkitPro/3ds-examples
 
 	Other parts of the code written by:
-	- MaxxBMD (Jan.12 2025)
+	- MaxxBMD (Jan.17 2025)
 */
 
 #include <3ds.h>
@@ -36,6 +36,7 @@ struct Button {
 	float volVelocity;	//the "velocity" of the sound's volume
 	bool isActive;
 };
+enum waveShape {sine, square, triangle, sawtooth};
 
 bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 	//(0,0) = screen's top left corner
@@ -49,8 +50,27 @@ bool doesBoxOverlapPoint(int bx, int by, int bw, int bh, int px, int py) {
 	);
 }
 
+//TODO make sure these things work
+float xToSquare(float x) {
+	//like a sine wave, but for a square wave
+	if (sin(x)) {return 1.0;}
+	return -1.0;
+}
+/* TODO: change these so they're float-friendly
+float xToSaw (float x) {
+	//like a sine wave, but for a sawtooth wave
+	if (x < 0) {x *= -1;}
+	return (x % 2) - 1;
+}
+float xToTriangle (float x) {
+	//like a sine wave, but for a triangle wave
+	if (x < 0) {x *= -1;}
+	return abs(x % 2) - 1;
+}
+*/
+
 // audioBuffer is stereo PCM16
-void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* btnToPlay) {
+void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* btnToPlay, enum waveShape soundShape) {
 	u32* dest = (u32*) audioBuffer;
 
 	if (!btnToPlay) {return;}
@@ -58,13 +78,40 @@ void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* b
 	//const float TARGET_VELOCITY = 1.0;
 	const float AMPLITUDE_MAX = 0.3;
 		
-	//TODO figure out exactly when to tick up/down the velocity of the sound.
-	//This could be a full-fledged ASDR thing.
+	/* TODO(?): fade in/out
+	I dunno if it'll fully be an ASDR thing,
+	but I'd like to have the sound fade in/out.
+	Perhaps it work like this:
+		- each tick/frame, each button will keep track of its' velocity.
+		- any button that has >0 velocity will play a sound
+			- as in, fill_buffer() will be called.
+				- hmm... does this function allow multiple sounds to play at once...?
+			- the sound will be louder in proportion to the velocity (with limits)
+		- buttons will gain/lose velocity based on if they're being pressed or not
+	*/
 	
 	for (int i = 0; i < size; i++) {
 		// This is a simple sine wave, with a frequency of `frequency` Hz.
-		s16 sample = AMPLITUDE_MAX * 0x7FFF * sin(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
-		
+
+		s16 sample = AMPLITUDE_MAX * 0x7FFF;
+
+		//there's probably an easier way to do this.
+		if (soundShape == square) {
+			sample *= xToSquare(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		}
+		/*	TODO: fix the xToSaw and xToTriangle functions before re-enabling these
+		else if (soundShape == sawtooth) {
+			sample *= xoToSaw(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		}
+		else if (soundShape == triangle) {
+			sample *= xToTriangle(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		}
+		*/
+		else {
+			//sine, or if soundShape is unspecified
+			sample *= sin(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+		}
+
 		// Stereo samples are interleaved: left and right channels.
 		dest[i] = (sample << 16) | (sample & 0xffff);
 	}
@@ -376,7 +423,8 @@ int main(int argc, char **argv)
 				waveBuf[fillBlock].data_pcm16, 
 				stream_offset, 
 				waveBuf[fillBlock].nsamples, 
-				selectedBtn
+				selectedBtn,
+				sine
 			);
 			ndspChnWaveBufAdd(0, &waveBuf[fillBlock]);
 			stream_offset += waveBuf[fillBlock].nsamples;
