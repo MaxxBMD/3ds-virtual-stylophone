@@ -8,7 +8,9 @@
 
 #include <3ds.h>
 #include <citro2d.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #define ARRAY_SIZE(array) (sizeof(array)/sizeof(array[0]))
 #define SAMPLERATE 22050
@@ -55,19 +57,22 @@ float xToSquare(float x) {
 	if (sin(x) > 0) {return 1.0;}
 	else {return -1.0;}
 }
-
-/* FIXME: either make tri/saw float friendly or use ints.
-float xToSaw (float x) {
-	//like a sine wave, but for a sawtooth wave
-	if (x < 0) {x *= -1;}
-	return (x % 2) - 1;
-}
 float xToTriangle (float x) {
 	//like a sine wave, but for a triangle wave
-	if (x < 0) {x *= -1;}
-	return abs(x % 2) - 1;
+	x = (x - (M_PI / 2.0)) / 2.0;
+	float retval = 2 * abs(
+		2 * (  (x/M_PI) - floor(x/M_PI)  ) - 1
+	) - 1;
+	return retval;
 }
-*/
+float xToSaw (float x) {
+	//like a sine wave, but for a sawtooth wave
+	x = (x + M_PI) / 2.0;
+	return 2 * (
+		(x/M_PI) - floor((x/M_PI) + 0.5)
+	);
+}
+
 
 // audioBuffer is stereo PCM16
 void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* btnToPlay, enum waveShape soundShape) {
@@ -99,14 +104,12 @@ void fill_buffer(void* audioBuffer, size_t offset, size_t size, struct Button* b
 		if (soundShape == square) {
 			sample *= xToSquare(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		}
-		/*	TODO: fix xToSaw() and xToTriangle() before re-enabling these
 		else if (soundShape == sawtooth) {
-			sample *= xoToSaw(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
+			sample *= xToSaw(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		}
 		else if (soundShape == triangle) {
 			sample *= xToTriangle(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
 		}
-		*/
 		else {
 			//sine, or if soundShape is incompatable
 			sample *= sin(btnToPlay->frequency * (2 * M_PI) * (offset + i) / SAMPLERATE);
@@ -358,9 +361,9 @@ int main(int argc, char **argv)
 		//TODO: once we have all 4 wave shapes, change %2 to %4.
 		int currentShape_int = currentShape;
 		if (kDown & KEY_DUP || kDown & KEY_X) {
-			currentShape_int = (++currentShape) % 2;
+			currentShape_int = (++currentShape) % 4;
 		} else if (kDown & KEY_DDOWN || kDown & KEY_B) {
-			currentShape_int = (--currentShape) % 2;
+			currentShape_int = (--currentShape) % 4;
 		}
 		currentShape = currentShape_int;		
 
